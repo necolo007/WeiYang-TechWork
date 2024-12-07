@@ -1,4 +1,4 @@
-package DB
+package config
 
 import (
 	"github.com/spf13/viper"
@@ -14,6 +14,10 @@ type Config struct {
 		Dsn          string
 		MaxIdleConns int
 	}
+	Redis struct {
+		Address  string
+		Password string
+	}
 }
 
 var AppConfig *Config
@@ -21,7 +25,7 @@ var AppConfig *Config
 func InitConfig() {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath("./DB")
+	viper.AddConfigPath("./config")
 
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatalf("Error reading config file : %v ", err)
@@ -32,4 +36,5 @@ func InitConfig() {
 	}
 
 	initDB()
+	InitRedis()
 }

@@ -12,6 +12,7 @@ type User struct {
 	Password   string `gorm:"not null"`
 	Role       string `gorm:"default:'user'"`
 	AdminLevel uint   `gorm:"default:0"`
+	JoinTeam   []Team `gorm:"many2many:user_team;"`
 }
 
 type UserClaims struct {
@@ -19,4 +20,9 @@ type UserClaims struct {
 	Username string
 	Role     string
 	jwt.StandardClaims
+}
+
+type UserTeam struct {
+	UserID string
+	TeamID string
 }

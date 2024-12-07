@@ -25,8 +25,9 @@ func GenerateRandomKey() string {
 func GenerateToken(user M.User) (string, error) {
 	ExpirationTime := time.Now().Add(24 * time.Hour).Unix()
 	claims := &M.UserClaims{
-		UserId: user.ID,
-		Role:   user.Role,
+		UserId:   user.ID,
+		Role:     user.Role,
+		Username: user.Name,
 		StandardClaims: jwt.StandardClaims{
 			NotBefore: time.Now().Unix() - 60,
 			ExpiresAt: ExpirationTime,

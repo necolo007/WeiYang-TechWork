@@ -13,7 +13,6 @@ func GetTeamInfo(c *gin.Context) {
 	// 获取查询参数
 	pageStr := c.DefaultQuery("page", "1")
 	pageSizeStr := c.DefaultQuery("pagesize", "10")
-	sort := c.DefaultQuery("sort", "")
 
 	// 将查询参数转换为整数
 	page, err := strconv.Atoi(pageStr)
@@ -29,7 +28,7 @@ func GetTeamInfo(c *gin.Context) {
 	offset := (page - 1) * pageSize
 	// 使用分页和排序查询数据库
 	var teams []Model.Team
-	result := global.Db.Order(sort).Offset(offset).Limit(pageSize).Find(&teams)
+	result := global.Db.Offset(offset).Limit(pageSize).Preload("Member").Preload("Details").Find(&teams)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
@@ -52,7 +51,6 @@ func CreateTeam(c *gin.Context) {
 	_ = c.BindJSON(&team)
 	//设置队伍创建者
 	team.Leader = userClaims.Username
-	team.ApprovalStatus = "pending"
 	//保存队伍信息
 	result := global.Db.Save(&team)
 	if result.Error != nil {
@@ -111,4 +109,31 @@ func DeleteTeam(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"msg": "队伍删除成功！"})
+}
+
+func JoinTeam(c *gin.Context) {
+	claims, ok := c.Get("UserClaims")
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "未识别到token!"})
+		return
+	}
+	userClaims := claims.(*Model.UserClaims)
+	teamID := c.Param("teamID")
+	var team Model.Team
+	if result := global.Db.Where("id=?", teamID).First(&team); result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+	var ExistUser Model.User
+	if result := global.Db.Where("name=?", userClaims.Username).First(&ExistUser); result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+	team.Member = append(team.Member, ExistUser)
+	result := global.Db.Save(&team)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"msg": "加入队伍成功！"})
 }
